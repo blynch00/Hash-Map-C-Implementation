@@ -3,21 +3,9 @@
 #include <stdbool.h>
 #include <time.h>       
 #include "./methods.h"
-#include "./dynamic_array.h"
 
-LinkedList *create_list(void);
-int get_size(LinkedList *);
-struct Node *get_head(LinkedList *);
-Node *get_node_by_value(int,LinkedList *);
-int add_value(int, LinkedList *);
-void fill_list(int, LinkedList *);
-void print_list(LinkedList *);
-int delete_value(int, LinkedList *);
-int delete_node(Node *,  LinkedList *);
-int clear_list(LinkedList *);
-bool list_is_empty(LinkedList *);
-bool contains(int, LinkedList *);
-int index_of_value(int, LinkedList *);
+
+
 //-------------------------- To Implement --------------------------
 DynArr *to_array(LinkedList *);
 //---------------------------
@@ -25,25 +13,24 @@ DynArr *to_array(LinkedList *);
 int main (void)
 {
     srand(time(NULL));
-    LinkedList *new_list = create_list();
+    LinkedList *new_list = ll_create_list();
     printf("Size: %d\n", get_size(new_list));
     //print_list(list_pointer);
     int amount = rand() % 6;
-    
-    add_value(99, new_list);
-    add_value(100, new_list);
-    fill_list(amount, new_list);
+    ll_add_value(99, new_list);
+    ll_add_value(100, new_list);
+    ll_fill_list(amount, new_list);
     print_list(new_list);
-    printf("Size: %d\n", get_size(new_list));
-    printf("%s\n", get_node_by_value(99, new_list)? "True": "False");
-    int delete_it = delete_value(99, new_list);
-    printf("Size: %d\n", get_size(new_list));
-    print_list(new_list);
+    printf("Size: %d\n", ll_get_size(new_list));
+    printf("%s\n", ll_get_node_by_value(99, new_list)? "True": "False");
+    int delete_it = ll_delete_value(99, new_list);
+    printf("Size: %d\n", ll_get_size(new_list));
+    ll_print_list(new_list);
     return 0;
     
 }
 
-LinkedList *create_list(void){
+LinkedList *ll_create_list(void){
     LinkedList *new_list = malloc(sizeof(LinkedList));
     if (!new_list){
         printf("New List could not be created.");
@@ -59,12 +46,12 @@ LinkedList *create_list(void){
 
 
 // Returns size variable of struct object as integer.
-int get_size(LinkedList *list){
+int ll_get_size(LinkedList *list){
     return (int)list->size;
 }
 
 // Given a value, traverse nodes until either all nodes are visited, or node is found and returned.
-Node *get_node_by_value(int search_value, LinkedList *list){
+Node *ll_get_node_by_value(int search_value, LinkedList *list){
     Node *current = list->head;
     if (!current){
         return NULL;
@@ -82,11 +69,11 @@ Node *get_node_by_value(int search_value, LinkedList *list){
     return NULL;
 }
 
-struct Node *get_head(LinkedList *list){
+struct Node *ll_get_head(LinkedList *list){
     return list->head;
 }
 
-int add_value(int value, LinkedList *list){
+int ll_add_value(int value, LinkedList *list){
     // Create new node struct with the given value, pointing to current head.
     Node *new_node = malloc(sizeof(Node));
     new_node->next = list->head;
@@ -98,7 +85,7 @@ int add_value(int value, LinkedList *list){
 }
 
 // Print list dependent on the node count.
-void print_list(LinkedList *list){
+void ll_print_list(LinkedList *list){
     if (list->size == 0){
         printf("[None]\n");
         return;
@@ -119,22 +106,22 @@ void print_list(LinkedList *list){
     printf("[None]\n");
 }
 
-void fill_list(int amount, LinkedList *list){
+void ll_fill_list(int amount, LinkedList *list){
     for (int x = 0; x < amount; ++x){
-        add_value(rand() % 255, list);
+        ll_add_value(rand() % 255, list);
     }
 }
 
-int delete_value(int value, LinkedList *list){
+int ll_delete_value(int value, LinkedList *list){
     // Locate node with the value, if within list.
-    Node *node_to_delete = get_node_by_value(value, list);
+    Node *node_to_delete = ll_get_node_by_value(value, list);
     if (!node_to_delete){
         return -1;
     }
-    return delete_node(node_to_delete, list);
+    return ll_delete_node(node_to_delete, list);
 }
 
-int delete_node(Node *node_deleted,  LinkedList *list){
+int ll_delete_node(Node *node_deleted,  LinkedList *list){
     Node *next = node_deleted->next;
 
     if(list->head == node_deleted){
@@ -162,7 +149,7 @@ int delete_node(Node *node_deleted,  LinkedList *list){
     return 1;
 }
 
-int clear_list(LinkedList *list){
+int ll_clear_list(LinkedList *list){
     if (list->size == 0 && list->head == NULL){
         return 1;
     }
@@ -181,7 +168,7 @@ int clear_list(LinkedList *list){
 }
 
 
-bool list_is_empty(LinkedList *list){
+bool ll_list_is_empty(LinkedList *list){
     if (list->size == 0 && list->head == NULL){
         return true;
     }
@@ -190,7 +177,7 @@ bool list_is_empty(LinkedList *list){
     }
 }
 
-bool contains(int search_value, LinkedList *list){
+bool ll_contains(int search_value, LinkedList *list){
     if(list->size == 0 && list->head == NULL){
         return false;
     }
@@ -210,7 +197,7 @@ bool contains(int search_value, LinkedList *list){
     return false;
 }
 
-int index_of_value(int value, LinkedList *list){
+int ll_index_of_value(int value, LinkedList *list){
     if(list->size == 0 && list->head == NULL){
         return -1;
     }
