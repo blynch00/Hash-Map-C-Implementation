@@ -11,32 +11,26 @@ typedef struct{
         size_t size;
         size_t capacity;
         int *items;
-        int *minimum;
-        int *maximum;
     }DynArr;
 
 // Dynamic Array Initializations
 //---------------------------------------------
 // int *da_create_underlying_array(size_t);
-DynArr *da_create_DynArr(size_t);
+DynArr *da_create_array(size_t);
 bool da_resize_array(size_t, DynArr *);  
-bool da_array_is_empty(DynArr *);
-size_t da_array_length(DynArr *);
-size_t da_array_capacity(DynArr *);
-void da_print_array(DynArr *);
-void da_fill_array(size_t, DynArr *);
-bool da_find_minimum(DynArr *);
-bool da_find_maximum(DynArr *);
-void da_append_value(int, DynArr *);
+bool da_array_is_empty(const DynArr *);
+size_t da_array_length(const DynArr *);
+size_t da_array_capacity(const DynArr *);
+void da_print_array(const DynArr *);
+bool da_fill_array(size_t, DynArr *);
+int  *da_find_minimum(DynArr *);
+int *da_find_maximum(DynArr *);
+bool da_append_value(int, DynArr *);
 size_t da_find_value(int, DynArr *);
-void da_remove_value(int, DynArr *);
-void da_remove_at_index(size_t, DynArr *);
-void da_add_at_index(int, size_t, DynArr *);
-void da_update_min_max(int, DynArr *);
-void da_find_min_max(DynArr *);
+bool da_remove_value(int, DynArr *);
+bool da_remove_at_index(size_t, DynArr *);
+bool da_add_at_index(int, size_t, DynArr *);
 bool da_destroy_array(DynArr *);
 //------------------------------------------------
-
-
 
 #endif

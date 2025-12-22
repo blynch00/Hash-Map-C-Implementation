@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>       
-#include "./methods.h"
-
+#include "./linked_list_header.h"
+#include "../Dynamic Array/dyn_arr_header.h"
 
 
 //-------------------------- To Implement --------------------------

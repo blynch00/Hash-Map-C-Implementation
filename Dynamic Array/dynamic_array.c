@@ -2,48 +2,55 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>       // Used in srand() for number generation
-#include "./methods.h"
+#include "./dyn_arr_header.h"
 
-int minimum, maximum;
 
 int main(void)
 {
     srand(time(NULL));
     size_t starting_capacity = 4;
+
     /* Initialize an empty dynamic array*/
-    DynArr example_array = da_create_DynArr(starting_capacity);
-    DynArr *arr_pointer = &example_array;
-    size_t amount = 2;
-    da_fill_array(amount, arr_pointer);
-    da_print_array(arr_pointer);
+
+    DynArr *example_array = da_create_array(starting_capacity);
+    if(example_array == NULL){ 
+    fprintf(stderr, "Array could not be created.");
+    return 1;
+    }
+
+    // Fill array with randomly generated values
+    size_t amount = 8;
+
+    if (!da_fill_array(amount, example_array)){
+        fprintf(stderr, "Error filling array.\n");
+        return 1;
+    }
+    da_print_array(example_array);
+    printf("Min: %d, Max: %d\n", *da_find_minimum(example_array), *da_find_maximum(example_array));
+    // Insert an element at a specified index.
     int xy_insert = 999; 
-    da_add_at_index(xy_insert, 2, arr_pointer);
-    da_print_array(arr_pointer);
-    printf("\n");
+    if (!da_add_at_index(xy_insert, 2, example_array)){
+        fprintf(stderr, "Error: array could not be added to dynamic array.");
+        return 1;
+    }
+    da_print_array(example_array); 
+    printf("Min: %d, Max: %d\n", *da_find_minimum(example_array), *da_find_maximum(example_array));
+    // Print capacity before/after resize function is called
+    printf("Capacity before resize: %zu\n", example_array->capacity);
+
+    if (!da_resize_array(example_array->capacity *2, example_array)){
+        fprintf(stderr, "Array could not be resized.");
+        return 1;
+    }
+    printf("Capacity after resize: %zu\n", example_array->capacity);
+
+    // find_index: first should be where the element was inserted, second should be SIZE_MAX.
+    printf("Location of 999: %zu\n", da_find_value(999, example_array));
+    printf("Location of 1000: %zu\n", da_find_value(1000, example_array));
+
+    printf("Array deleted: %s\n", da_destroy_array(example_array)? "true":"false");
+
     return 0;
-}
-
-
-/*
-Function: create_underlying_array
-Purpose: Creates a new allocation of memory, using calloc to clean, for DynArr object.
-Params: capacity (length of array)
-Returns: (int *) for newly created array.
- */
-
-int *da_create_underlying_array(size_t capacity){
-    /* If capacity is equal to 0 (size_t is unsigned), exit with error message. */
-    if (capacity == 0){
-        printf("Capacity is invalid.");
-        exit(EXIT_FAILURE);
-    }
-    /* Calloc is used over malloc to clear memory, initially to set all parameters to 0.*/
-    int *array = calloc(capacity, sizeof(int));
-    if (array == NULL){
-        printf("Malloc failure.");
-        exit(EXIT_FAILURE);
-    }
-    return array;
 }
 
 /*
@@ -53,16 +60,25 @@ Params: capacity (length of array)
 Returns: DynArr object.
     - This is used to return the new object on the assignment operator within main().
  */
-DynArr da_create_DynArr(size_t capacity){
+DynArr *da_create_array(size_t capacity){
     // if capacity == 0, set to 4, the lowest determined amount.
     if (capacity == 0){
         capacity = 4;
     }
-    // Create an int pointer to the new underlying array, created from the called function.
-    int *ptr = da_create_underlying_array(capacity);
-    // This is then used to create an object of the DynArr class, with ptr as the items member.
-    DynArr new_dyn_arr = {0, capacity, ptr};
-    return new_dyn_arr;
+    DynArr *new_array = malloc(sizeof(DynArr));
+    if (new_array == NULL){
+        fprintf(stderr, "Error: NULL pointer in creation of new array.\n");
+        return NULL;
+    }
+    new_array->items = calloc(capacity, sizeof(int));
+    if (new_array->items == NULL){
+        fprintf(stderr, "Error: NULL pointer during creation of array->items.\n");
+        free(new_array);
+        return NULL;
+    }
+    new_array->size = 0;
+    new_array->capacity = capacity;
+    return new_array;
 }
 
 
@@ -86,7 +102,7 @@ bool da_resize_array(size_t capacity, DynArr *array){
     /* Assign the realloc return pointer to a new type initially, in case realloc fails. */
     int *new_pointer = realloc(array->items, capacity * sizeof(int));
     if (new_pointer == NULL){
-        printf("Reallocation Failed.");
+        fprintf(stderr, "Error: Realloc failed during resizing array.\n");
         return false;
     }
     /* If a NULL pointer was not returned, update the capacity/items pointer*/
@@ -107,14 +123,18 @@ Purpose: Add a new integer to the end of the array, resizing if needed.
 Params: integer, DynArr pointer
 Returns: N/A
  */
-void da_append_value(int value, DynArr *array){
+bool da_append_value(int value, DynArr *array){
     // Initially checks if adding the new value would overflow specified array, and if so, resizes the array.
     if (array->size >= array->capacity){
-        da_resize_array(array->capacity * 2, array);
+        if(!da_resize_array(array->capacity * 2, array)){
+            fprintf(stderr, "Error: Element failed to append. Resize array failed.\n");
+            return false;
+        }
     }
     // Set the next open value in memory to the parameter value, and increment size.
     array->items[array->size] = value;
-    array->size += 1;
+    array->size ++;
+    return true; 
 }
 /*
 Function: fill array
@@ -122,24 +142,30 @@ Purpose: Fills array with int values
 Params: amount, DynArr pointer
 Returns: N/A
  */
-void da_fill_array(size_t amount, DynArr *array){
+bool da_fill_array(size_t amount, DynArr *array){
+    if (!array || amount < 0){
+        return false;
+    }
     // Iterate through the specified amount, generating pseudo-random numbers and appending to array.
     for (size_t x = 0; x < amount; ++x){
         // Create a random number
         int random_number = rand() % 255;
         // Set the current index in memory to the value of the iterator, and increment size.
-        da_append_value(random_number, array);
+        if (!da_append_value(random_number, array)){
+            fprintf(stderr, "Error: appending value during fill_array failed.\n");
+        }
     }
+    return true;
 }
 /*Functions: array_length, array_capacity
 Purpose: Returns specific data members of a DynArr object.
 Params: DynArr pointer.
 Returns: integer
  */
-size_t da_array_length(DynArr *array){
+size_t da_array_length(const DynArr *array){
     return array->size;
 }
-size_t da_array_capacity(DynArr *array){
+size_t da_array_capacity(const DynArr *array){
     return array->capacity;
 }
 /*
@@ -148,7 +174,8 @@ Purpose: Prints all elements within the array, based on array->size
 Params:DynArr pointer
 Returns: N/A
  */
-void da_print_array(DynArr *array){
+void da_print_array(const DynArr *array){
+    if(!array) return;
     for (size_t i = 0; i < array->size; ++i){
         if (i == 0){
             printf("[");
@@ -170,38 +197,34 @@ Purpose: Returns (as an integer) the smallest integer within the array. If array
 Params: DynArr pointer
 Returns: integer
  */
-bool da_find_minimum(DynArr *array){
-    if (array->size == 0) return false;
-
-    for (size_t i = 0; i < array->size; ++i){
-        if (i == 0) {
-            minimum = array->items[i];
-        }
-        if (array->items[i] < minimum){
-            minimum = array->items[i];
+int *da_find_minimum(DynArr *array){
+    if (!array || array->size == 0) return NULL;
+    int *minimum = &array->items[0];
+    for (size_t i = 1; i < array->size; ++i){
+        if (array->items[i] < *minimum){
+            minimum = &array->items[i];
         }
     }
-    return true;
+    return minimum;
 }
+
 /*
 Function: find_maximum
 Purpose: Returns (as an integer) the largest integer within the array; returns -1 otherwise.
 Params: DynArr pointer
 Returns: integer
  */
-bool da_find_maximum(DynArr *array){
-    if (array->size == 0) return false;
-
-    for (size_t i = 0; i < array->size; ++i){
-        if (i == 0) {
-            maximum = array->items[i];
-        }
-        if (array->items[i] > maximum){
-            maximum = array->items[i];
+int *da_find_maximum(DynArr *array){
+    if (!array || array->size == 0) return NULL;
+    int *maximum = &array->items[0];
+    for (size_t i = 1; i < array->size; ++i){
+        if (array->items[i] > *maximum){
+            maximum = &array->items[i];
         }
     }
-    return true;
+    return maximum;
 }
+
 
 /*
 Function: find_value
@@ -225,10 +248,10 @@ Purpose: Given an index, remove this value and call helper function to shift all
 Params: size_t index, DynArr pointer.
 Returns: N/A
  */
-void da_remove_at_index(size_t index_position, DynArr *array){
+bool da_remove_at_index(size_t index_position, DynArr *array){
     // If the position is greater than the number of elements, or greater than the current length of the list, immediately return.
     if(array->size <= index_position) {
-        return;
+        return false;
     }
     //starting at the element to be removed, take the next element and move it into the space to the left.
     for (size_t x = index_position; x < array->size - 1; ++x){
@@ -238,9 +261,12 @@ void da_remove_at_index(size_t index_position, DynArr *array){
     // Decrement size of .size of the object
     array->size--;
     if (array->size != 0 && array->size <= array->capacity / 4){
-        da_resize_array(array->capacity / 2, array);
+        if(!da_resize_array(array->capacity / 2, array)){
+            fprintf(stderr, "Error: Array failed to resize during removal_at_index.\n");
+            return false;
+        }
     }
-    return;
+    return true;
 }
 /*
 Function: remove_value
@@ -249,16 +275,16 @@ Purpose: Returns first instance of an integer within the array; returns -1 if va
 Params: integer, DynArr pointer.
 Returns: integer
  */
-void da_remove_value(int remove_value, DynArr *array){
+bool da_remove_value(int remove_value, DynArr *array){
     // First check if value is within array, and if so, return the index.
     size_t index_position = da_find_value(remove_value, array);
-    // If the index position is larger than the size of the array, we can return immediately (no element)
+    // If the index position is larger than the size of the array, we can return false (not valid)
     if(index_position == SIZE_MAX){
-        return;
+        return false;
     }
     da_remove_at_index(index_position, array);
     // Otherwise, check if array will be resized.
-    return;
+    return true;
 }
 
 /*Function: is_empty
@@ -266,9 +292,8 @@ Purpose: Returns a boolean, dependent on whether or not the parameter array is e
 Params: DynArr pointer.
 Returns: Boolean
  */
-bool da_array_is_empty(DynArr *array){
-    if(array->size == 0) return true;
-    else return false;
+bool da_array_is_empty(const DynArr *array){
+    return(array->size == 0);
 }
 
 
@@ -279,13 +304,17 @@ Purpose: Similar to add_at_index, but rather than removing at the given index, t
 Params: size_t index, DynArr pointer.
 Returns: N/A
  */
-void da_add_at_index(int value, size_t index_position, DynArr *array){
+bool da_add_at_index(int value, size_t index_position, DynArr *array){
     // Check if index is greater than the current size; if so, appending would leave empty indices, so we return.
-    if(index_position > array->size) return;
+    if(index_position > array->size) return false;
 
     // Check if array must be resized before insertion.
     if(array->size >= array->capacity){
-        da_resize_array(array->capacity * 2, array);
+        if(!da_resize_array(array->capacity * 2, array)){
+            fprintf(stderr, "Error: Resize failed during add_at_index- NULL pointer returned.\n");
+            return false;
+        }
+        
     }
     // insert new value, and then shift all elements to the right.
     for(size_t i = array->size; i > index_position; --i){
@@ -293,5 +322,15 @@ void da_add_at_index(int value, size_t index_position, DynArr *array){
         }
     array->items[index_position] = value;
     array->size++;
-    return;
+    return true;
+}
+
+bool da_destroy_array(DynArr *array){
+    if(!array){
+        return false;
+    }
+    free(array->items);
+    free(array);
+    return true;
+
 }
