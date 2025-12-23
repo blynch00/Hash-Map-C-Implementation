@@ -62,7 +62,7 @@ Returns: DynArr object.
  */
 DynArr *da_create_array(size_t capacity){
     // if capacity == 0, set to 4, the lowest determined amount.
-    if (capacity == 0){
+    if (capacity <= 3){
         capacity = 4;
     }
     DynArr *new_array = malloc(sizeof(DynArr));
