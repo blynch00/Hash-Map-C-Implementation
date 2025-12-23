@@ -5,10 +5,6 @@
 #include "linked_list_header.h"
 
 
-//-------------------------- To Implement --------------------------
-// DynArr *to_array(LinkedList *);
-//---------------------------
-
 int main (void)
 {
     srand(time(NULL));
@@ -28,6 +24,10 @@ int main (void)
     printf("\nList empty: %s\n", ll_list_is_empty(new_list)? "true":"false");
     ll_clear_list(new_list);
     printf("\nList empty: %s\n", ll_list_is_empty(new_list)? "true":"false");
+    
+    if(!ll_delete_list(new_list)){
+        fprintf(stderr, "Error (Main): failure to delete linked list during cleanup.\n");
+    }
     return 0;
     
 }
@@ -40,7 +40,7 @@ Returns: pointer to Linked_List struct (or NULL).
 LinkedList *ll_create_list(void){
     LinkedList *new_list = malloc(sizeof(LinkedList));
     if (!new_list){
-        fprintf(stderr, "Error: malloc returned NULL during LL creation.");
+        fprintf(stderr, "Error: malloc returned NULL during LL creation.\n");
         return NULL;
     }
     new_list->head = NULL;
@@ -54,7 +54,7 @@ Params: list pointer
 Returns: size_t
  */
 // Returns size variable of struct object.
-size_t ll_get_size(LinkedList *list){
+size_t ll_get_size(const LinkedList *list){
     return list->size;
 }
 /*
@@ -62,8 +62,8 @@ Function: ll_get_node_by_value
 Purpose: Return pointer to first node with matching int value, if any.
 Params: (int) value, list pointer.
 Returns: Node pointer
- */
-Node *ll_get_node_by_value(int search_value, LinkedList *list){
+*/
+Node *ll_get_node_by_value(int search_value, const LinkedList *list){
     // Check if list exists or is not empty
     if(!list || list->size == 0) return NULL;
     // Set head to a variable
@@ -88,7 +88,8 @@ Purpose: Return node count for linked list.
 Params: list pointer
 Returns: Node pointer
 */
-Node *ll_get_head(LinkedList *list){
+Node *ll_get_head(const LinkedList *list){
+    if (list->head == NULL) return NULL;
     return list->head;
 }
 
@@ -104,6 +105,10 @@ bool ll_add_value(int value, LinkedList *list){
     }
     // Create new node struct with the given value, pointing to current head.
     Node *new_node = malloc(sizeof(Node));
+    if(!new_node){
+        fprintf(stderr, "Error- node creation failed; malloc returned null pointer.\n");
+        return false;
+    }
     new_node->next = list->head;
     new_node->value = value;
     list->head = new_node;
@@ -119,7 +124,8 @@ Params: list pointer
 Returns: N/A
 */
 
-void ll_print_list(LinkedList *list){
+void ll_print_list(const LinkedList *list){
+    if (!list) return;
     if (list->size == 0){
         printf("[None]\n");
         return;
@@ -178,7 +184,6 @@ bool ll_delete_node(Node *node_deleted,  LinkedList *list){
 
     if (!list || !node_deleted) return false;
 
-    Node *next = node_deleted->next;
     // If the current head is the node to be deleted, list->head is the only reference to this node.
     if(list->head == node_deleted){
         list->head = node_deleted->next;
@@ -188,7 +193,7 @@ bool ll_delete_node(Node *node_deleted,  LinkedList *list){
     }
     // Otherwise, iterate through list until node is reach (to get previous node)
     Node *iterator_node = list->head;
-    for(int t = 0; t < list->size; ++ t)
+    for(size_t t = 0; t < list->size; ++ t)
     {
         if (iterator_node->next == node_deleted) {
             break;
@@ -222,7 +227,7 @@ bool ll_clear_list(LinkedList *list){
     Node *current_node = list->head;
     Node *next_node = list->head;
 
-    for(int x = 0; x < list->size; ++x){
+    for(size_t x = 0; x < list->size; ++x){
         if(current_node == NULL){
             break;
         }
@@ -243,7 +248,7 @@ Purpose: Returns boolean if list is empty
 Params: list pointer
 Returns: boolean
 */
-bool ll_list_is_empty(LinkedList *list){
+bool ll_list_is_empty(const LinkedList *list){
     return (list->size == 0 && list->head == NULL);
 }
 /*
@@ -252,13 +257,13 @@ Purpose: Returns boolean depending on if list contains given integer or not.
 Params: int value, list pointer
 Returns: boolean
 */
-bool ll_contains(int search_value, LinkedList *list){
+bool ll_contains(int search_value, const LinkedList *list){
     if(list->size == 0 && list->head == NULL){
         return false;
     }
     Node *current_node = list->head;
 
-    for (int x = 0; x < list->size; ++x){
+    for (size_t x = 0; x < list->size; ++x){
         if(!current_node){
             return false;
         }
@@ -277,13 +282,13 @@ Purpose: returns index, as size_t, to first node with parameter element (if with
 Params: int value, list pointer
 Returns: size_t                     <---------------- Must be changed
 */
-size_t ll_index_of_value(int value, LinkedList *list){
+size_t ll_index_of_value(int value, const LinkedList *list){
     if(list->size == 0 && list->head == NULL){
         return SIZE_MAX;
     }
     Node *current_node = list->head;
 
-    for (int x = 1; x < list->size + 1; ++x){
+    for (size_t x = 1; x < list->size + 1; ++x){
         if(!current_node){
             return SIZE_MAX;
         }
@@ -297,3 +302,21 @@ size_t ll_index_of_value(int value, LinkedList *list){
     return SIZE_MAX;
 }
 
+
+/*
+Function: ll_delete_list
+Purpose: deletes list by first clearing the list, then freeing list struct.
+Params: list pointer
+Returns: boolean
+*/
+bool ll_delete_list(LinkedList *list){
+
+    if(!list) return false;
+    
+    if (!ll_clear_list(list)){
+        fprintf(stderr, "Error- clear list returned false during list deletion.\n");
+        return false;
+    }
+    free(list);
+    return true;
+}
