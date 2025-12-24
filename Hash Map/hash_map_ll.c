@@ -3,11 +3,33 @@
 #include <stdbool.h>
 #include <time.h>
 #include "hash_map_header.h"
-
+#include <ctype.h>          // used in hash_function
 
 int main(void){
     HashMap *new_map = hm_create_map(4);
-
+    char *name = "Finnegan";
+    char *age  = "Twenty-Four-Eighteen_19922";
+    char *test = "1a";
+    size_t name_index = hm_hash_function(name, new_map);
+    size_t age_index  = hm_hash_function(age, new_map);
+    size_t test_index = hm_hash_function(test, new_map);
+    if(name_index > 3 || age_index > 3){
+        fprintf(stderr, "Indexes out of range\n");
+        return 1;
+    }
+    printf("Size: %zu, Capacity: %zu\n", hm_get_size(new_map), hm_get_capacity(new_map));
+    printf("Name index: %zu, Age index: %zu, test index: %zu\n", name_index, age_index, test_index);
+    hm_print_map(new_map);
+    printf("\n----------\n");
+    if(!hm_insert_pair(22, name, new_map)){
+        fprintf(stderr, "Error: pair could not be inserted in main.");
+        return 1;
+    }
+    if(!hm_insert_pair(12,test,new_map)){
+        fprintf(stderr, "Error: pair could not be inserted.\n");
+        return 1;
+    }
+    hm_print_map(new_map);
     return 0;
 }
 
@@ -19,20 +41,28 @@ Returns: HashMap pointer
 */
 HashMap *hm_create_map(size_t capacity){
     if(capacity == 0) capacity = 4;
-
+    // Malloc for total size of struct
     HashMap *new_map = malloc(sizeof(HashMap));
     if(!new_map){
         fprintf(stderr, "Error: create_map malloc allotment returned NULL.\n");
         return NULL;
     }
+    // Calloc for component storing list pointers; create an array of individual ArrayList structs
     ArrayList **new_buckets = calloc(capacity, sizeof(ArrayList));
     if(!new_buckets){
         fprintf(stderr, "Error: Calloc returned NULL during buckets creation. \n");
         return NULL;
     }
+    for(size_t x = 0; x < capacity; ++x){
+        ArrayList *sublist = malloc(sizeof(ArrayList));
+        new_buckets[x] = sublist;
+
+    }
+    // Only changes member values if both malloc & calloc return non-NULL pointers
     new_map->size = 0;
     new_map->capacity = capacity;
     new_map->buckets = new_buckets;
+    printf("New map created.\n");
     return new_map;
 }
 
@@ -43,10 +73,19 @@ Function: hash_function
 Purpose: returns integer, as the index of the array in which to insert the new key/value pair.
 Params:  char *key
 Returns: size_t index
-*/
-size_t hm_hash_function(char *key){
+*/                                                  // MUST REWORK
+size_t hm_hash_function( const char *key, HashMap *map){
     // djb2?
-    return 0;
+    unsigned int hash = 5381;
+    int c;
+    while ((c = *key++)){
+        if(isupper(c))
+        {
+            c += 32;
+        }
+        hash = ((hash << 5) + hash) + c;
+    }
+    return (size_t) hash % 4;
 
 }
       
@@ -66,22 +105,62 @@ bool hm_insert_pair(int value, char *key, HashMap *map){
     }
     new_node->value = value;
     new_node->key = key;
+    new_node->next = NULL;
     
-    //size_t index = hm_hash_function(key);
-    
-    // insert new_node into map->buckets[index]
+    // Find index
+    size_t index = hm_hash_function(key, map);
 
-    // increment size
+    // insert new_node into map->buckets[index]
+    if (map->buckets[index]->head == NULL){
+        map->buckets[index]->head = new_node;
+        map->size++;
+        return true;
+    }
+    new_node->next = map->buckets[index]->head;
+    map->buckets[index]->head = new_node;
+    map->size++;
+    return true;
 
     // calculate load factor
-
+    if(map->size / map->capacity >= 1.0){
+        printf("Must resize.\n");
+    }
     // Call resize_array if needed.
 
 
-    return false;
+    return true;
 }
 
+/*
+Function: print_map
+Purpose:  if elements are stored within hash map, prints them.
+Params:   HashMap pointer
+Returns:  void (prints via stdout stream)
+*/
+void hm_print_map(HashMap *map){
+    if(!map || map->capacity == 0) return;
 
+    for(size_t x = 0; x < map->capacity; ++x){
+        // For each list in the array:
+        // printf("\nx\n");
+        
+        if(map->buckets[x]->head == NULL){
+            printf("X\n|\n");
+            continue;
+        }
+        else{
+            printf("s");
+            continue;
+        }
+        // else{
+        //     MapNode *current_node = map->buckets[x]->head;
+        //     printf("%d", current_node->value);
+        //     if(current_node->next != NULL) printf("--");
+
+        // }
+    }
+
+}
 
 /*
 Function: clear_map
@@ -137,7 +216,7 @@ Purpose:  checks whether or not the current HashMap contains the given key
 Params:   char *key, HashMap pointer
 Returns:  boolean
 */
-bool hm_contains_key(char *key, const HashMap *map){
+bool hm_contains_key(const char *key, const HashMap *map){
     return false;
 }
 

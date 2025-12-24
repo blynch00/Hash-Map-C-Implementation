@@ -32,13 +32,14 @@ typedef struct {
 
 
 HashMap *hm_create_map(size_t);
-size_t   hm_hash_function(char *);
-bool     hm_insert_pair(int, char *, HashMap *);
+size_t   hm_hash_function(const char *, HashMap *);
+bool     hm_insert_pair(int, char *, HashMap *); // not const char, as it must match qualifiers for assignment
 bool     hm_clear_map(HashMap *);
 bool     hm_resize_array(size_t, HashMap *);
+void     hm_print_map(HashMap *);
 size_t   hm_get_size(const HashMap *);
 size_t   hm_get_capacity(const HashMap *);
-bool     hm_contains_key(char *, const HashMap *);
+bool     hm_contains_key(const char *, const HashMap *);
 bool     hm_contains_value(int, const HashMap *);
 bool     hm_delete_map(HashMap *);
 bool     hm_is_empty(const HashMap *);
