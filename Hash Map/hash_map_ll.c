@@ -30,6 +30,8 @@ int main(void){
         return 1;
     }
     hm_print_map(new_map);
+    hm_clear_map(new_map);
+    hm_print_map(new_map);
     return 0;
 }
 
@@ -55,6 +57,10 @@ HashMap *hm_create_map(size_t capacity){
     }
     for(size_t x = 0; x < capacity; ++x){
         ArrayList *sublist = malloc(sizeof(ArrayList));
+        if(!sublist){
+            fprintf(stderr, "Error: malloc returned NULL during sublist creation.\n");
+            return NULL;
+        }
         new_buckets[x] = sublist;
 
     }
@@ -114,19 +120,18 @@ bool hm_insert_pair(int value, char *key, HashMap *map){
     if (map->buckets[index]->head == NULL){
         map->buckets[index]->head = new_node;
         map->size++;
-        return true;
     }
-    new_node->next = map->buckets[index]->head;
-    map->buckets[index]->head = new_node;
-    map->size++;
-    return true;
+    else{
+        new_node->next = map->buckets[index]->head;
+        map->buckets[index]->head = new_node;
+        map->size++;     
+    }
 
     // calculate load factor
     if(map->size / map->capacity >= 1.0){
         printf("Must resize.\n");
     }
     // Call resize_array if needed.
-
 
     return true;
 }
@@ -145,19 +150,22 @@ void hm_print_map(HashMap *map){
         // printf("\nx\n");
         
         if(map->buckets[x]->head == NULL){
+            if( x +1 == map->capacity){
+                printf("X\n");
+                continue;
+            }
             printf("X\n|\n");
             continue;
         }
         else{
-            printf("s");
+            MapNode *current_node = map->buckets[x]->head;
+            while(current_node){
+                printf("%d --> ", current_node->value);
+                current_node = current_node->next;
+            }
+            printf(" X \n");
             continue;
         }
-        // else{
-        //     MapNode *current_node = map->buckets[x]->head;
-        //     printf("%d", current_node->value);
-        //     if(current_node->next != NULL) printf("--");
-
-        // }
     }
 
 }
@@ -170,6 +178,22 @@ Returns:  boolean
 */
 bool hm_clear_map(HashMap *map){
     // Iterate through each bucket, finding individual size, then free(node)
+    if(!map) return false;
+
+    for(size_t x = 0; x < map->capacity; ++x){
+        if (map->buckets[x]->head == NULL) continue;
+ 
+        MapNode *current_node = map->buckets[x]->head;
+        while(current_node->next != NULL){
+            // Must save as variable before, so we know the next node to free.
+            MapNode *next_node = current_node->next;
+            free(current_node);
+            current_node = next_node;
+        }
+        free(current_node);
+        map->buckets[x]->head = NULL;
+        //
+    }
     return true;
 }
 
@@ -182,9 +206,55 @@ Params:   size_t capacity, HashMap pointer
 Returns:  boolean
 */
 bool hm_resize_array(size_t capacity, HashMap *map){
+    if(!map){
+        fprintf(stderr, "Error- failure to pass map to resize_array.\n");
+        return false;
+    }
+    
+    // If the load factor is too large, resize capacity.
+    if( (map->size / capacity) >= 1.0) capacity * 2;
+
+    ArrayList **new_buckets = calloc(capacity, sizeof(ArrayList));
+    if(!new_buckets){
+        fprintf(stderr, "Error: Calloc returned NULL during resize. \n");
+        return NULL;
+    }
+    for(size_t x = 0; x < capacity; ++x){
+        ArrayList *sublist = malloc(sizeof(ArrayList));
+        if(!sublist){
+            fprintf(stderr, "Error: malloc returned NULL during resize\n");
+            return NULL;
+        }
+    
+    // now new_buckets is a unique "buckets" to replace original.
+
+        // Set new variable to map->buckets, reassign map->buckets.
+    ArrayList **old_buckets = map->buckets;
+    map->buckets = new_buckets;
+    map->capacity = capacity;
+    size_t old_size = map->size;
+    map->size = 0;
+
+    // Iterate through each old bucket, taking any value stored and appending using updated hash function to new buckets.
+        for(size_t x = 0; x < (*old_buckets)->size; ++x){
+            // At each linked list-
+            if((*old_buckets)->head == NULL) continue;
+
+            MapNode *current_node = map->buckets[x]->head;
+            while(current_node){
+                
+            }
+
+        }
+
+
+    // Change capacity and map->buckets to new buckets.
+
+
     // Use realloc, or if (!map->buckets) create new array(?)
     // Create new array, moving all key/value pairs over, or delete each node and create a new one at the new_array.
     return false;
+}
 }
 /*
 Function: get_size
@@ -195,8 +265,6 @@ Returns: size_t size
 size_t hm_get_size(const HashMap *map){
     return map->size;
 }
-
-
 
 /*
 Function: get_capacity
@@ -217,6 +285,12 @@ Params:   char *key, HashMap pointer
 Returns:  boolean
 */
 bool hm_contains_key(const char *key, const HashMap *map){
+    // Calculate index based on hash function
+
+    // Check linked list at this index
+
+
+    // Iterate through linked list, and return T/F
     return false;
 }
 
