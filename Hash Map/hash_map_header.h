@@ -39,10 +39,10 @@ bool     hm_resize_array(size_t, HashMap *);
 void     hm_print_map(HashMap *);
 size_t   hm_get_size(const HashMap *);
 size_t   hm_get_capacity(const HashMap *);
-bool     hm_contains_key(const char *, const HashMap *);
+bool     hm_contains_key(const char *, HashMap *);
 bool     hm_contains_value(int, const HashMap *);
 bool     hm_delete_map(HashMap *);
 bool     hm_is_empty(const HashMap *);
-bool     hm_remove(int, HashMap *);
+bool     hm_remove_key(char *, HashMap *);
 
 #endif
